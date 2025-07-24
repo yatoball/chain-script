@@ -98,9 +98,42 @@ local function atualizarChain()
     end
 end
 
--- Atualização inicial
+-- Funções para conectar eventos de ChildAdded
+local function conectarEventosLootingItems()
+    local lootFolder = workspace:FindFirstChild("LootingItems")
+    if lootFolder then
+        lootFolder.ChildAdded:Connect(atualizarLoot)
+        for _, categoria in ipairs(lootFolder:GetChildren()) do
+            categoria.ChildAdded:Connect(atualizarLoot)
+        end
+    end
+end
+
+local function conectarEventosZonas()
+    local zonasFolder = workspace:FindFirstChild("ExtraDetails")
+    if zonasFolder then
+        zonasFolder.ChildAdded:Connect(atualizarZonas)
+    end
+end
+
+-- Monitorar criação futura das pastas
+workspace.ChildAdded:Connect(function(obj)
+    if obj.Name == "LootingItems" then
+        conectarEventosLootingItems()
+        atualizarLoot()
+    elseif obj.Name == "ExtraDetails" then
+        conectarEventosZonas()
+        atualizarZonas()
+    elseif obj.Name == "CHAIN" then
+        atualizarChain()
+    end
+end)
+
+-- Atualização inicial e conexão de eventos
 atualizarLoot()
+conectarEventosLootingItems()
 atualizarZonas()
+conectarEventosZonas()
 atualizarChain()
 
 -- GUI
@@ -127,6 +160,14 @@ titulo.TextColor3 = Color3.fromRGB(255, 255, 255)
 titulo.Font = Enum.Font.SourceSansBold
 titulo.TextSize = 18
 
+local lootBtn, zonaBtn, chainBtn
+
+local function atualizarBotoes()
+    lootBtn.Text = "ESP LootingItems: " .. (ativoLoot and "ON" or "OFF")
+    zonaBtn.Text = "ESP Zonas: " .. (ativoZona and "ON" or "OFF")
+    chainBtn.Text = "ESP CHAIN: " .. (ativoChain and "ON" or "OFF")
+end
+
 local function criarBotao(texto, ordem, callback)
     local btn = Instance.new("TextButton", frame)
     btn.Size = UDim2.new(1, -20, 0, 32)
@@ -141,22 +182,22 @@ local function criarBotao(texto, ordem, callback)
     return btn
 end
 
-local lootBtn = criarBotao("ESP LootingItems: ON", 1, function()
+lootBtn = criarBotao("ESP LootingItems: ON", 1, function()
     ativoLoot = not ativoLoot
-    lootBtn.Text = "ESP LootingItems: " .. (ativoLoot and "ON" or "OFF")
     atualizarLoot()
+    atualizarBotoes()
 end)
 
-local zonaBtn = criarBotao("ESP Zonas: ON", 2, function()
+zonaBtn = criarBotao("ESP Zonas: ON", 2, function()
     ativoZona = not ativoZona
-    zonaBtn.Text = "ESP Zonas: " .. (ativoZona and "ON" or "OFF")
     atualizarZonas()
+    atualizarBotoes()
 end)
 
-local chainBtn = criarBotao("ESP CHAIN: ON", 3, function()
+chainBtn = criarBotao("ESP CHAIN: ON", 3, function()
     ativoChain = not ativoChain
-    chainBtn.Text = "ESP CHAIN: " .. (ativoChain and "ON" or "OFF")
     atualizarChain()
+    atualizarBotoes()
 end)
 
 local creditos = Instance.new("TextLabel", frame)
@@ -168,14 +209,4 @@ creditos.TextColor3 = Color3.fromRGB(120, 200, 255)
 creditos.Font = Enum.Font.SourceSansItalic
 creditos.TextSize = 16
 
--- Atualização automática se objetos forem adicionados
-workspace.LootingItems.ChildAdded:Connect(atualizarLoot)
-for _, categoria in ipairs(workspace.LootingItems:GetChildren()) do
-    categoria.ChildAdded:Connect(atualizarLoot)
-end
-workspace.ExtraDetails.ChildAdded:Connect(atualizarZonas)
-workspace.ChildAdded:Connect(function(obj)
-    if obj.Name == "CHAIN" then
-        atualizarChain()
-    end
-end) 
+atualizarBotoes() 
